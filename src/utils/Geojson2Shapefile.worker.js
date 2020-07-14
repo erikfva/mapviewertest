@@ -1,48 +1,29 @@
-import { applyCommands } from "mapshaper-es/www/mapshaper.js";
-
+//import { applyCommands } from "mapshaper-es/www/mapshaper.js";
+//*import { applyCommands } from "../mapshaper/src/cli/mapshaper-run-commands";
+import { importGeoJSON } from "../mapshaper/src/geojson/geojson-import";
+//import { exportShapefile } from "../mapshaper/src/shapefile/shp-export";
+import { exportFileContent } from "../mapshaper/src/io/mapshaper-export";
 const Geojson2Shapefile = function(geojson, filename) {
-  const FILENAMES = {
-    TARGET: "target.geojson",
-    SOURCE: "source.geojson",
-    OUTPUT: "output.geojson",
-  };
-  const exportCommand = `
-          -i ${FILENAMES.TARGET}
-          -o ${FILENAMES.OUTPUT}
-          format=shapefile
-          encoding=utf-8
-        `;
   let process = new Promise((resolve, reject) => {
-    applyCommands(
-      exportCommand,
-      {
-        [FILENAMES.TARGET]: geojson,
-      },
-      (err, output) => {
-        if (err) {
-          console.log(err);
-          return reject(err);
-          //mapshaper.internal.logArgs([`${err.toString()} \n`]);
-        }
-
-        // TODO: Do something with output.
-        // Output is an Object that can be one ore more keys, containing encoded data.
-        // Decode using new TextDecoder("utf-8").decode(output[key])
-
-        const files = Object.entries(output).map((el) => {
-          return {
-            filename: el[0].replace("output", filename),
-            content: el[1],
-          };
-        });
-        console.log(files);
-        return resolve(files);
-
-        //console.log(output);
-        //return output;
-      }
-    );
+    /* console.log("init importGeoJSON", new Date().toLocaleTimeString()); */
+    const dataset = importGeoJSON(geojson);
+    /*     console.log(
+      "finish importGeoJSON",
+      new Date().toLocaleTimeString(),
+      dataset
+    ); */
+    const outShp = exportFileContent(dataset, { format: "shapefile" });
+    /* console.log(
+      "finish exportFileContent",
+      new Date().toLocaleTimeString(),
+      outShp
+    ); */
+    outShp.forEach((file) => {
+      file.filename = file.filename.replace("layer", filename);
+    });
+    resolve(outShp);
   });
   return process;
 };
+
 export default Geojson2Shapefile;

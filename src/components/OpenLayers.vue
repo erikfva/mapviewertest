@@ -2,7 +2,6 @@
 <template>
   <div>
     <v-btn
-      ref="btnDwdSHP"
       :loading="downloading"
       :disabled="downloading"
       color="blue-grey"
@@ -13,10 +12,30 @@
       right
       @click="downloadShapeFile"
     >
+      <v-icon dark>mdi-cloud-download</v-icon>
+    </v-btn>
+    <v-btn
+      v-if="initialized"
+      color="blue"
+      class="ma-2 white--text"
+      absolute
+      fab
+      bottom
+      left
+      @click="openShapeFile"
+    >
       <v-icon dark>mdi-cloud-upload</v-icon>
     </v-btn>
-
     <div ref="map" class="map"></div>
+
+    <!-- Dialog for upload ShapeFile -->
+    <v-dialog v-model="openShapefileOn" max-width="450px">
+      <add-shapefile
+        ref="openShapefileDialog"
+        v-on:cancel="openShapefileOn = false"
+        v-on:upload="addGeojsonLayer"
+      ></add-shapefile>
+    </v-dialog>
   </div>
 </template>
 
@@ -43,7 +62,7 @@ import Geojson2Shapefile from "@/utils/Geojson2Shapefile.worker";
 import { CompressBlobFiles } from "@/utils/Zip";
 import SaveBlob from "@/utils/SaveBlobFile";
 
-//import * as mapshaper from "mapshaper-es/www/mapshaper.js";
+import AddShapefile from "./add-layer/AddShapefile";
 
 // Converts geojson-vt data to GeoJSON
 // eslint-disable-next-line no-unused-vars
@@ -77,9 +96,9 @@ var replacer = function(key, value) {
       type: "Feature",
       geometry: {
         type: type,
-        coordinates: geometry,
+        coordinates: geometry
       },
-      properties: value.tags,
+      properties: value.tags
     };
   } else {
     return value;
@@ -89,7 +108,7 @@ var replacer = function(key, value) {
 // eslint-disable-next-line no-unused-vars
 var tileIndex = geojsonvt(geojsonObject, {
   extent: 4096,
-  debug: 1,
+  debug: 1
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -103,7 +122,7 @@ const tileUrlFunction = function(tileCoord) {
   var geojson = JSON.stringify(
     {
       type: "FeatureCollection",
-      features: data ? data.features : [],
+      features: data ? data.features : []
     },
     replacer
   );
@@ -113,8 +132,14 @@ const tileUrlFunction = function(tileCoord) {
 
 export default {
   name: "OpenLayers",
+  map: undefined,
+  components: { AddShapefile },
+  data: () => ({
+    initialized: false,
+    downloading: false,
 
-  data: () => ({ downloading: false }),
+    openShapefileOn: false
+  }),
   mounted() {
     let vc = this;
 
@@ -122,15 +147,15 @@ export default {
       let vectorSource = new VectorSource({
         features: new GeoJSON({
           projection: "EPSG:4326",
-          featureProjection: "EPSG:3857",
-        }).readFeatures(geojsonObject),
+          featureProjection: "EPSG:3857"
+        }).readFeatures(geojsonObject)
       });
       let vectorLayer = new VectorLayer({
-        source: vectorSource,
+        source: vectorSource
       });
 
       let OSM_ = new TileLayer({
-        source: new OSM(),
+        source: new OSM()
       });
       OSM_;
 
@@ -139,11 +164,13 @@ export default {
         target: vc.$refs.map,
         view: new View({
           center: [-63.18117, -17.78629],
-          zoom: 2,
-        }),
+          zoom: 2
+        })
       });
 
       map.updateSize();
+      vc.$options.map = map;
+      vc.initialized = true;
       /*
       map.addGeojsonLayer({
         id: "testjson",
@@ -158,30 +185,53 @@ export default {
       let vc = this;
       vc.downloading = true;
       const filename = "caminos secundarios";
-      setTimeout(() => {
-        Geojson2Shapefile(geojsonObject, filename)
-          .then((files) => {
-            CompressBlobFiles(files)
-              .then((blobZip) => {
-                SaveBlob(filename + ".zip", blobZip, (err) => {
-                  if (err) console.log(err);
-                  vc.downloading = false;
-                });
-              })
-              .catch((reason) => {
-                //error saveZipFile
-                console.log(reason);
+
+      Geojson2Shapefile(geojsonObject, filename)
+        .then(files => {
+          CompressBlobFiles(files)
+            .then(blobZip => {
+              SaveBlob(filename + ".zip", blobZip, err => {
+                if (err) console.log(err);
                 vc.downloading = false;
               });
-          })
-          .catch((reason) => {
-            //error Geojson2Shapefile
-            console.log(reason);
-            vc.downloading = false;
-          });
-      }, 400);
+            })
+            .catch(reason => {
+              //error saveZipFile
+              console.log(reason);
+              vc.downloading = false;
+            });
+        })
+        .catch(reason => {
+          //error Geojson2Shapefile
+          console.log(reason);
+          vc.downloading = false;
+        });
     },
-  },
+    openShapeFile() {
+      this.$refs.openShapefileDialog && this.$refs.openShapefileDialog.init();
+      this.openShapefileOn = true;
+    },
+    addGeojsonLayer(geojson) {
+      this.openShapefileOn = false;
+      let olMap = this.$options.map;
+      let vectorSource = new VectorSource({
+        features: new GeoJSON({
+          projection: "EPSG:4326",
+          featureProjection: "EPSG:3857"
+        }).readFeatures(geojson)
+      });
+      let vectorLayer = new VectorLayer({
+        source: vectorSource
+      });
+      olMap.addLayer(vectorLayer);
+
+      let extent = vectorSource.getExtent();
+
+      if (!isNaN(olMap.getSize()[0])) {
+        olMap.getView().fit(extent, olMap.getSize());
+      }
+    }
+  }
 };
 </script>
 <style>

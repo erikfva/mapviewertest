@@ -10,6 +10,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "core-js": "^3.6.5",
+    "flatbush": "^3.3.0",
     "geojson-vt": "^3.2.1",
     "leaflet": "^1.6.0",
     "mapbox-gl": "^1.10.1",
@@ -50,7 +51,10 @@
     "parserOptions": {
       "parser": "babel-eslint"
     },
-    "rules": {}
+    "rules": {
+      "no-unused-vars": "off",
+      "no-control-regex": "off"
+    }
   },
   "browserslist": [
     "> 1%",
