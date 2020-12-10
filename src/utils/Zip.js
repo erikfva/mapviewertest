@@ -90,6 +90,7 @@ const isReadableFileType = function(filename) {
   );
 };
 const UncompressBlobFile = function(file) {
+  console.log("init UncompressBlobFile", new Date().toLocaleTimeString());
   const process = new Promise((resolve, reject) => {
     var _files = [];
     zip.createReader(new zip.BlobReader(file), importZipContent, onError);

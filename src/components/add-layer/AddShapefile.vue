@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 <template>
   <v-card dark>
     <v-card-title class>Importar capa vectorial</v-card-title>
@@ -55,7 +54,14 @@
 
 <script>
 import { UncompressBlobFile, isZipFile } from "@/utils/Zip";
-import Shapefile2Geojson from "@/utils/Shapefile2Geojson.worker";
+//import { Shapefile2Features } from "@/utils/Shapefile2Features.worker";
+import {
+  Shapefile2Geojson,
+  readShapefile,
+  Shapefile2Dataset
+} from "@/utils/Shapefile2Geojson.worker";
+import { importContent } from "../../mapshaper/src/io/mapshaper-import";
+import { exportDatasetAsGeoJSON } from "../../mapshaper/src/geojson/geojson-export";
 
 export default {
   props: {},
@@ -100,7 +106,7 @@ export default {
 
       vc.processing = true;
       try {
-        let files = await UncompressBlobFile(this.file);
+        const files = await UncompressBlobFile(this.file);
         if (files.length == 0) {
           vc.processing = false;
           return vc.showError("Archivo no válido.");
@@ -109,9 +115,50 @@ export default {
         const files_ = files.map(el => {
           return { name: el.name, content: el };
         });
-        let geojson = await Shapefile2Geojson(files_);
+        console.log(files_, new Date().toLocaleTimeString());
+        //let result = await Shapefile2Dataset(files_);
+        //let result = await Shapefile2Geojson(files_);
+        //let result = await Shapefile2Features(files_);
+
+        console.log("init readShapefile", new Date().toLocaleTimeString());
+        let input = await readShapefile(files_);
+
+        console.log("init importContent", new Date().toLocaleTimeString());
+        let out = await importContent(input, {
+          encoding: "UTF-8",
+          no_topology: true
+        });
+        console.log(
+          "finish importContent",
+          out,
+          new Date().toLocaleTimeString()
+        );
+
+        console.log(
+          "init exportDatasetAsGeoJSON",
+          new Date().toLocaleTimeString()
+        );
+        let result = await exportDatasetAsGeoJSON(out, { format: "geojson" });
+        console.log(
+          "finish exportDatasetAsGeoJSON",
+          new Date().toLocaleTimeString()
+        );
+
+        //let geojsonFiles = exportFileContent(out, { format: "geojson" });
+        //return geojsonFiles[0].content;
+        //let geojson = JSON.parse(geojsonFiles[0].content);
+        console.log(
+          "finish Shapefile2Geojson",
+          new Date().toLocaleTimeString()
+        );
+
+        console.log(
+          "recibe result Shapefile2xxx",
+          result,
+          new Date().toLocaleTimeString()
+        );
         vc.success = true;
-        vc.$emit("upload", geojson);
+        vc.$emit("upload", result);
 
         //console.log(geojson);
       } catch (error) {

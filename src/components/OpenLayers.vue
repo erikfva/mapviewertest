@@ -64,6 +64,8 @@ import SaveBlob from "@/utils/SaveBlobFile";
 
 import AddShapefile from "./add-layer/AddShapefile";
 
+import VectorImageLayer from "ol/layer/VectorImage";
+
 // Converts geojson-vt data to GeoJSON
 // eslint-disable-next-line no-unused-vars
 var replacer = function(key, value) {
@@ -144,6 +146,41 @@ export default {
     let vc = this;
 
     vc.$nextTick(function() {
+      /*
+      let vectorSource = new VectorSource({
+        features: new GeoJSON({
+          projection: "EPSG:4326",
+          featureProjection: "EPSG:3857"
+        }).readFeatures(geojsonObject)
+      });
+      /*
+      let vectorLayer = new VectorLayer({
+        source: vectorSource
+      });
+      
+
+      let vectorLayer = new VectorImageLayer({
+        imageRatio: 2,
+        source: vectorSource
+      });
+*/
+      let OSM_ = new TileLayer({
+        source: new OSM()
+      });
+      OSM_;
+
+      let map = new Map({
+        layers: [OSM_ /*,  vectorLayer*/],
+        target: vc.$refs.map,
+        view: new View({
+          center: [-63.18117, -17.78629],
+          zoom: 2
+        })
+      });
+
+      map.updateSize();
+
+      /*       console.log("init addLayer", new Date().toLocaleTimeString());
       let vectorSource = new VectorSource({
         features: new GeoJSON({
           projection: "EPSG:4326",
@@ -153,22 +190,9 @@ export default {
       let vectorLayer = new VectorLayer({
         source: vectorSource
       });
-
-      let OSM_ = new TileLayer({
-        source: new OSM()
-      });
-      OSM_;
-
-      let map = new Map({
-        layers: [/* OSM_, */ vectorLayer],
-        target: vc.$refs.map,
-        view: new View({
-          center: [-63.18117, -17.78629],
-          zoom: 2
-        })
-      });
-
-      map.updateSize();
+      map.addLayer(vectorLayer);
+      console.log("finish addLayer", new Date().toLocaleTimeString());
+ */
       vc.$options.map = map;
       vc.initialized = true;
       /*
@@ -211,14 +235,11 @@ export default {
       this.$refs.openShapefileDialog && this.$refs.openShapefileDialog.init();
       this.openShapefileOn = true;
     },
-    addGeojsonLayer(geojson) {
+    addFeatureLayer(features) {
       this.openShapefileOn = false;
       let olMap = this.$options.map;
       let vectorSource = new VectorSource({
-        features: new GeoJSON({
-          projection: "EPSG:4326",
-          featureProjection: "EPSG:3857"
-        }).readFeatures(geojson)
+        features: features
       });
       let vectorLayer = new VectorLayer({
         source: vectorSource
@@ -230,6 +251,38 @@ export default {
       if (!isNaN(olMap.getSize()[0])) {
         olMap.getView().fit(extent, olMap.getSize());
       }
+    },
+    addGeojsonLayer(geojson) {
+      console.log("init addGeojsonLayer", new Date().toLocaleTimeString());
+      this.openShapefileOn = false;
+      let olMap = this.$options.map;
+
+      let vectorSource = new VectorSource({
+        features: new GeoJSON({
+          projection: "EPSG:4326",
+          featureProjection: "EPSG:3857"
+        }).readFeatures(geojson)
+      });
+
+      let vectorLayer = new VectorLayer({
+        source: vectorSource
+      });
+
+      /*
+      let vectorLayer = new VectorImageLayer({
+        imageRatio: 2,
+        source: vectorSource
+      });
+*/
+      olMap.addLayer(vectorLayer);
+      console.log("finish addGeojsonLayer", new Date().toLocaleTimeString());
+      /*
+      let extent = vectorSource.getExtent();
+
+      if (!isNaN(olMap.getSize()[0])) {
+        olMap.getView().fit(extent, olMap.getSize());
+      }
+*/
     }
   }
 };

@@ -63,18 +63,38 @@ const readShapefile = function(files) {
   return process;
 };
 
-const Shapefile2Geojson = async function(files) {
+const Shapefile2Dataset = async function(files) {
+  console.log("init Shapefile2Geojson", new Date().toLocaleTimeString());
   let input = await readShapefile(files);
 
+  console.log("init importContent", new Date().toLocaleTimeString());
+  let dataset = importContent(input, {
+    encoding: "UTF-8",
+    no_topology: true,
+  });
+  console.log("finish importContent", dataset, new Date().toLocaleTimeString());
+  return JSON.stringify(dataset);
+};
+
+const Shapefile2Geojson = async function(files) {
+  console.log("init Shapefile2Geojson", new Date().toLocaleTimeString());
+  let input = await readShapefile(files);
+
+  console.log("init importContent", new Date().toLocaleTimeString());
   let out = importContent(input, {
     encoding: "UTF-8",
     no_topology: true,
   });
+  console.log("finish importContent", out, new Date().toLocaleTimeString());
+
+  console.log("init exportDatasetAsGeoJSON", new Date().toLocaleTimeString());
+  let geojson = exportDatasetAsGeoJSON(out, { format: "geojson" });
+  console.log("finish exportDatasetAsGeoJSON", new Date().toLocaleTimeString());
 
   //let geojsonFiles = exportFileContent(out, { format: "geojson" });
-  let geojson = exportDatasetAsGeoJSON(out, { format: "geojson" });
   //return geojsonFiles[0].content;
   //let geojson = JSON.parse(geojsonFiles[0].content);
+  console.log("finish Shapefile2Geojson", new Date().toLocaleTimeString());
   return geojson;
 };
-export default Shapefile2Geojson;
+export { Shapefile2Geojson, Shapefile2Dataset, readShapefile };
