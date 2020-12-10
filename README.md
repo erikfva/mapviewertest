@@ -33,3 +33,7 @@ yarn lint
 ### Customize configuration
 
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+## Sample shapefile
+
+For test performance the program use the Bolivia secondary road, the zipped shapefile location is in /shp folder. Upload this shapefile for test in OpenLayers.
